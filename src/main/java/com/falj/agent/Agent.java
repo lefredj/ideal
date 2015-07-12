@@ -39,7 +39,9 @@ public class Agent {
 		previousInteraction = e.interactions.iterator().next();
 	}
 
-	public void step() {
+	public String step() {
+		String description;
+		
 		// choose next interaction to try considering the previous interaction
 		String nextInteraction = memory.chooseInteraction(previousInteraction);
 
@@ -47,8 +49,8 @@ public class Agent {
 		Interaction result = enact(nextInteraction);
 
 		// print (previousInteraction)/(resultInteraction)/(triedInteraction) - age
-		System.out.print("("+previousInteraction.getHash()+")/("+result.getHash()+")/("+nextInteraction + ") - " + age + "\r");
-		
+//		System.out.print("("+previousInteraction.getHash()+")/("+result.getHash()+")/("+nextInteraction + ") - " + age + "\r");
+		description = "\n("+previousInteraction.getHash()+")/("+result.getHash()+")/("+nextInteraction + ")\nage : " + age +"\n\n";
 		// learn
 		memory.learn(previousInteraction, result, nextInteraction);
 
@@ -56,13 +58,14 @@ public class Agent {
 		previousInteraction = result;
 
 		// regularly organize memory (during sleep)
-		if( age % 500 == 0 ) {
-			System.out.println("sleep " + age);
-			memory.sleep();
-			System.out.println();
-		}
+//		if( age % 500 == 0 ) {
+//			System.out.println("sleep " + age);
+			description += memory.sleep();
+//			System.out.println();
+//		}
 
 		age ++;
+		return description;
 	}
 
 	/**

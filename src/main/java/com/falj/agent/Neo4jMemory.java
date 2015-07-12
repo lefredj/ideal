@@ -55,6 +55,11 @@ class Neo4jMemory {
 
 	private String defaultInteraction;
 
+	private int numberOfRelationDeleted = 0;
+	private int numberOfNodeLearned = 0;
+	private int numberOfNodeForgot = 0;
+	
+	
 	private static enum RelTypes implements RelationshipType
 	{
 		LEADS_TO
@@ -283,10 +288,7 @@ class Neo4jMemory {
 		} );
 	}
 
-	public void sleep() {
-		int numberOfRelationDeleted = 0;
-		int numberOfNodeLearned = 0;
-		int numberOfNodeForgot = 0;
+	public String sleep() {
 		Set<Interaction> toAdd = new HashSet<>();
 		try ( Transaction tx = graphDb.beginTx() )
 		{
@@ -301,8 +303,11 @@ class Neo4jMemory {
 							relationship.delete();
 							numberOfRelationDeleted++;
 						} else {
-							if((Long) relationship.getProperty("nTrials") <= MIN_TRIALS_PROBABILITY_TO_KEEP * (age - (Long) node.getProperty("birth"))) {
+							if(((Long) relationship.getProperty("nTrials")  > 1 ) && 
+									((Long) relationship.getProperty("nTrials") < MIN_TRIALS_PROBABILITY_TO_KEEP * (age - (Long) node.getProperty("birth")))) {
 								relationship.delete();
+								System.out.println((Long) node.getProperty("birth"));
+								numberOfRelationDeleted++;
 							}
 						}
 
@@ -341,9 +346,12 @@ class Neo4jMemory {
 				numberOfNodeLearned++;
 			}
 		}
-		System.out.println("relationShip deleted : " + numberOfRelationDeleted + "\n" +
+//		System.out.println("relationShip deleted : " + numberOfRelationDeleted + "\n" +
+//				"nodes forgotten      : " + numberOfNodeForgot + "\n" + 
+//				"nodes learned        : " + numberOfNodeLearned );
+		String description = "relationShip deleted : " + numberOfRelationDeleted + "\n" +
 				"nodes forgotten      : " + numberOfNodeForgot + "\n" + 
-				"nodes learned        : " + numberOfNodeLearned );
-
+				"nodes learned        : " + numberOfNodeLearned ;
+		return description;
 	}
 }

@@ -53,6 +53,10 @@ public class Environment extends EnvironmentInterface {
 
 	private Point feelCell;
 
+	private Point bumpCell;
+
+	private String description;
+
 	public Environment(Grid gui) throws ClassNotFoundException, IOException {
 
 		guiGrid = gui;
@@ -61,12 +65,12 @@ public class Environment extends EnvironmentInterface {
 		seen = 0;
 
 		// simple loop environment
-		setSimpleEnvironment();
+//		setSimpleEnvironment();
 
 		//setAllSeen();
 
 		// random environment
-		//setRandomEnvironment(10, 0.25);
+		setRandomEnvironment(10, 0.25);
 		// empty environment
 		//setEmptyEnvironment();
 
@@ -209,6 +213,7 @@ public class Environment extends EnvironmentInterface {
 		Interaction result = new Interaction();
 		getNeighboursStatus();
 		feelCell = null;
+		bumpCell = null;
 		
 		// turns
 		if( a.compareTo("TR") == 0 ) {
@@ -244,7 +249,7 @@ public class Environment extends EnvironmentInterface {
 					result.setHash("FRe");
 				}
 			}
-			setFeelCell(0);
+			feelCell = setFeelOrBumpCell(0);
 			result.setValence(scoreFeel);
 			score += scoreFeel;
 		}
@@ -260,7 +265,7 @@ public class Environment extends EnvironmentInterface {
 					result.setHash("FLe");
 				}
 			}
-			setFeelCell(1);
+			feelCell = setFeelOrBumpCell(1);
 			result.setValence(scoreFeel);
 			score += scoreFeel;
 		}
@@ -277,7 +282,7 @@ public class Environment extends EnvironmentInterface {
 					result.setHash("FFe");
 				}
 			}
-			setFeelCell(2);
+			feelCell = setFeelOrBumpCell(2);
 			result.setValence(scoreFeel);
 			score += scoreFeel;
 		}
@@ -285,6 +290,7 @@ public class Environment extends EnvironmentInterface {
 		// Fwd
 		if((( a.compareTo("FwdOk")  == 0 ) || ( a.compareTo("FwdBump")  == 0 )) || ( a.compareTo("FwdSeen")  == 0 )) {
 			if( neighbourStatus[2] == 1 ) {
+				bumpCell = setFeelOrBumpCell(2);
 				result.setHash("FwdBump");
 				result.setValence(scoreBump);
 				score += scoreBump;
@@ -325,16 +331,22 @@ public class Environment extends EnvironmentInterface {
 		guiGrid.text.setText("actions : " + actions + "\n" +
 				"bumps : " + bumps + " | " + ((float)bumps/(float)actions)*100 + "%\n" + 
 				"fwdOk : " + fwd + " | " + ((float)fwd/(float)actions)*100 + "%\n"+ 
-				"score : " + score  + " | " + ((float)score/(float)actions));
+				"score : " + score  + " | " + ((float)score/(float)actions) + "\n"
+				+ description);
 
 		guiGrid.repaint();
-
+		try {
+			Thread.sleep(10L);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return result;
 	}
 
 	public void step() {
 
-		agent.step();
+		description = agent.step();
 		//System.out.println(agentPosition[0]+"," + agentPosition[1] + "," + agentPosition[2]);
 	}
 
@@ -363,69 +375,74 @@ public class Environment extends EnvironmentInterface {
 
 	}
 
-	public void setFeelCell(int direction ) {
-		feelCell = new Point();
+	public Point setFeelOrBumpCell(int direction ) {
+		Point cell = new Point();
 		if(agentPosition[2] == 0) {
 			if( direction == 0 ) {
-				feelCell.x = agentPosition[0]-1;
-				feelCell.y = agentPosition[1];
+				cell.x = agentPosition[0]-1;
+				cell.y = agentPosition[1];
 			}
 			if( direction == 1 ) {
-				feelCell.x = agentPosition[0]+1;
-				feelCell.y = agentPosition[1];
+				cell.x = agentPosition[0]+1;
+				cell.y = agentPosition[1];
 			}
 			if( direction == 2 ) {
-				feelCell.x = agentPosition[0];
-				feelCell.y = agentPosition[1]+1;
+				cell.x = agentPosition[0];
+				cell.y = agentPosition[1]+1;
 			}
 		}
 
 		if(agentPosition[2] == 1) {
 			if( direction == 0 ) {
-				feelCell.x = agentPosition[0];
-				feelCell.y = agentPosition[1]+1;
+				cell.x = agentPosition[0];
+				cell.y = agentPosition[1]+1;
 			}
 			if( direction == 1 ) {
-				feelCell.x = agentPosition[0];
-				feelCell.y = agentPosition[1]-1;
+				cell.x = agentPosition[0];
+				cell.y = agentPosition[1]-1;
 			}
 			if( direction == 2 ) {
-				feelCell.x = agentPosition[0]+1;
-				feelCell.y = agentPosition[1];
+				cell.x = agentPosition[0]+1;
+				cell.y = agentPosition[1];
 			}
 		}
 		if(agentPosition[2] == 2) {
 			if( direction == 0 ) {
-				feelCell.x = agentPosition[0]+1;
-				feelCell.y = agentPosition[1];
+				cell.x = agentPosition[0]+1;
+				cell.y = agentPosition[1];
 			}
 			if( direction == 1 ) {
-				feelCell.x = agentPosition[0]-1;
-				feelCell.y = agentPosition[1];
+				cell.x = agentPosition[0]-1;
+				cell.y = agentPosition[1];
 			}
 			if( direction == 2 ) {
-				feelCell.x = agentPosition[0];
-				feelCell.y = agentPosition[1]-1;
+				cell.x = agentPosition[0];
+				cell.y = agentPosition[1]-1;
 			}
 		}
 		if(agentPosition[2] == 3) {
 			if( direction == 0 ) {
-				feelCell.x = agentPosition[0];
-				feelCell.y = agentPosition[1]-1;
+				cell.x = agentPosition[0];
+				cell.y = agentPosition[1]-1;
 			}
 			if( direction == 1 ) {
-				feelCell.x = agentPosition[0];
-				feelCell.y = agentPosition[1]+1;
+				cell.x = agentPosition[0];
+				cell.y = agentPosition[1]+1;
 			}
 			if( direction == 2 ) {
-				feelCell.x = agentPosition[0]-1;
-				feelCell.y = agentPosition[1];
+				cell.x = agentPosition[0]-1;
+				cell.y = agentPosition[1];
 			}
 		}
+		return cell;
 	}
 
 	
 	public Point getFeelCell() {
 		return feelCell;
+	}
+
+	public Point getBumpCell() {
+		return bumpCell;
 	}
 }

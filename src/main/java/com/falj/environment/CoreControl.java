@@ -39,7 +39,7 @@ public class CoreControl {
 
 		private Environment environment;
 
-		private int sizeOfCell=20;
+		private int sizeOfCell=40;
 
 		private int sizeX;
 		private int sizeY;
@@ -80,7 +80,7 @@ public class CoreControl {
 			for (Point fillCell : fillCells) {
 				int cellX = sizeOfCell + (fillCell.x * sizeOfCell);
 				int cellY = sizeOfCell + (fillCell.y * sizeOfCell);
-				g.setColor(Color.RED);
+				g.setColor(Color.BLUE);
 				g.fillRect(cellX, cellY, sizeOfCell, sizeOfCell);
 			}
 			fillCells2.clear();
@@ -107,6 +107,14 @@ public class CoreControl {
 				g.fillRect(cellX, cellY, sizeOfCell, sizeOfCell);
 			}
 			
+			Point bumpCell = environment.getBumpCell();
+			if(bumpCell != null) {
+				int cellX = sizeOfCell + (bumpCell.x * sizeOfCell);
+				int cellY = sizeOfCell + (bumpCell.y * sizeOfCell);
+				g.setColor(Color.RED);
+				g.fillRect(cellX, cellY, sizeOfCell, sizeOfCell);
+			}
+
 			
 			drawAgent(environment.agentPosition);
 
