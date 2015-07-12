@@ -13,6 +13,7 @@
 
 package com.falj.environment;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
@@ -67,9 +68,10 @@ public class CoreControl {
 
 			text = new JTextArea("");
 			text.setEditable(false);
-			text.setBounds( 300, 300, 20, 20);
+			
+//			this.setLayout(new BorderLayout());
+			this.add(text,BorderLayout.EAST);
 
-			this.add(text);
 		}
 
 		@Override
@@ -110,6 +112,7 @@ public class CoreControl {
 
 			g.setColor(Color.GREEN);
 			g.fillPolygon(xPoints, yPoints, 3);
+			text.setBounds( sizeX+2*sizeOfCell, 0, 200, 200);
 
 			text.repaint();
 		}
@@ -181,7 +184,7 @@ public class CoreControl {
 		try {
 			grid = new Grid();
 			JFrame window = new JFrame();
-			window.setSize(840, 840);
+			window.setSize(grid.sizeX + 2 * grid.sizeOfCell + 200, grid.sizeY + 2 * grid.sizeOfCell);
 			window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			window.add(grid);
 			
