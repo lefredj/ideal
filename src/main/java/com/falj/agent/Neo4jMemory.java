@@ -1,14 +1,14 @@
 /**
-* Neo4jmemory.java
-* structure of the memory - interface with the neo4j database
-* @version0.1
-* @author Frederic JEAN
-* @copyright (C) Frederic JEAN 2015
-* @date 01/07/2015
-* @notes  you can redistribute it and/or modify it under the terms of the 
-* Licence Creative Commons Attribution 4.0 International.
-* http://creativecommons.org/licenses/by/4.0/
-*/
+ * Neo4jmemory.java
+ * structure of the memory - interface with the neo4j database
+ * @version0.1
+ * @author Frederic JEAN
+ * @copyright (C) Frederic JEAN 2015
+ * @date 01/07/2015
+ * @notes  you can redistribute it and/or modify it under the terms of the 
+ * Licence Creative Commons Attribution 4.0 International.
+ * http://creativecommons.org/licenses/by/4.0/
+ */
 
 package com.falj.agent;
 
@@ -38,7 +38,7 @@ import org.neo4j.io.fs.FileUtils;
 class Neo4jMemory {
 
 	private static final String DB_PATH = "target/neo4j-";
-	
+
 	// parameters for the organization of the memory
 	private static final Long MIN_NTRIALS = 2L;
 	private static final double MIN_PROBABILITY_TO_KEEP = 0.2;
@@ -58,15 +58,15 @@ class Neo4jMemory {
 	private int numberOfRelationDeleted = 0;
 	private int numberOfNodeLearned = 0;
 	private int numberOfNodeForgot = 0;
-	
-	
+
+
 	private static enum RelTypes implements RelationshipType
 	{
 		LEADS_TO
 	}
 
 	public Neo4jMemory(Set<Interaction> interactions, String path) throws IOException {
-		
+
 		// "000" stands for the tests. The database is deleted
 		if(path.compareTo("000") == 0) {
 			FileUtils.deleteRecursively( new File( DB_PATH + path ) );
@@ -82,14 +82,14 @@ class Neo4jMemory {
 			IndexCreator index = schema.indexFor(DynamicLabel.label( "interaction" ));
 			if(index == null ) {
 				schema.indexFor( DynamicLabel.label( "interaction" ) )
-						.on( "name" )
-						.create();
+				.on( "name" )
+				.create();
 			}
 			IndexCreator index2 = schema.indexFor(DynamicLabel.label( "age" ));
 			if(index2 == null ) {
 				schema.indexFor( DynamicLabel.label( "age" ) )
-						.on( "name" )
-						.create();
+				.on( "name" )
+				.create();
 			}	
 			nodeage = graphDb.findNode(DynamicLabel.label( "age" ), "name", "age");
 			if( nodeage == null ) {
@@ -105,7 +105,7 @@ class Neo4jMemory {
 		for (Interaction interaction : interactions) {
 			addNode(interaction.getHash(), interaction.getValence());
 		}
-		
+
 		defaultInteraction = interactions.iterator().next().getHash();
 	}
 
@@ -222,7 +222,7 @@ class Neo4jMemory {
 			}
 
 		}
-		
+
 		try ( Transaction tx = graphDb.beginTx() )
 		{
 			// add tried and success properties
@@ -239,7 +239,7 @@ class Neo4jMemory {
 					}
 				}
 			}
-		
+
 			Iterable<Relationship> rel = previousNode.getRelationships(Direction.OUTGOING);
 			for (Relationship relationship : rel) {
 				if( resultNode.equals(relationship.getEndNode())) {
@@ -294,11 +294,11 @@ class Neo4jMemory {
 		{
 			Iterable<Node> nodes = IteratorUtil.asIterable(graphDb.findNodes(DynamicLabel.label( "interaction" )));
 			for (Node node : nodes) {
-				// refrain from altering primitive interactions
-				if( (Long)node.getProperty("birth") > 0L ) {
-					Iterable<Relationship> relationships = node.getRelationships(Direction.OUTGOING);
-					for (Relationship relationship : relationships) {
-						double probability = (Double) relationship.getProperty("probability");
+				Iterable<Relationship> relationships = node.getRelationships(Direction.OUTGOING);
+				for (Relationship relationship : relationships) {
+					double probability = (Double) relationship.getProperty("probability");
+					// refrain from altering primitive interactions
+					if( ((String)node.getProperty("name")).contains("/")) {
 						if( probability <= MIN_PROBABILITY_TO_KEEP) {
 							relationship.delete();
 							numberOfRelationDeleted++;
@@ -319,7 +319,7 @@ class Neo4jMemory {
 									(Double)node.getProperty("valence") + (Double)relationship.getEndNode().getProperty("valence") );
 							toAdd.add(interaction);
 						}
-					}					
+					}
 				}
 			}
 			tx.success();
@@ -344,9 +344,9 @@ class Neo4jMemory {
 				numberOfNodeLearned++;
 			}
 		}
-//		System.out.println("relationShip deleted : " + numberOfRelationDeleted + "\n" +
-//				"nodes forgotten      : " + numberOfNodeForgot + "\n" + 
-//				"nodes learned        : " + numberOfNodeLearned );
+		//		System.out.println("relationShip deleted : " + numberOfRelationDeleted + "\n" +
+		//				"nodes forgotten      : " + numberOfNodeForgot + "\n" + 
+		//				"nodes learned        : " + numberOfNodeLearned );
 		String description = "relationShip deleted : " + numberOfRelationDeleted + "\n" +
 				"nodes forgotten      : " + numberOfNodeForgot + "\n" + 
 				"nodes learned        : " + numberOfNodeLearned ;
