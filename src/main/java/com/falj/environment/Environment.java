@@ -14,6 +14,7 @@
 
 package com.falj.environment;
 
+import java.awt.Point;
 import java.io.IOException;
 import java.util.HashSet;
 
@@ -49,6 +50,8 @@ public class Environment extends EnvironmentInterface {
 	private double scoreFwdSeen = 5L;
 
 	private int seen = -1;
+
+	private Point feelCell;
 
 	public Environment(Grid gui) throws ClassNotFoundException, IOException {
 
@@ -205,6 +208,8 @@ public class Environment extends EnvironmentInterface {
 		// returns the environment response to an action
 		Interaction result = new Interaction();
 		getNeighboursStatus();
+		feelCell = null;
+		
 		// turns
 		if( a.compareTo("TR") == 0 ) {
 			agentPosition[2] = (agentPosition[2]-1);
@@ -239,6 +244,7 @@ public class Environment extends EnvironmentInterface {
 					result.setHash("FRe");
 				}
 			}
+			setFeelCell(0);
 			result.setValence(scoreFeel);
 			score += scoreFeel;
 		}
@@ -254,6 +260,7 @@ public class Environment extends EnvironmentInterface {
 					result.setHash("FLe");
 				}
 			}
+			setFeelCell(1);
 			result.setValence(scoreFeel);
 			score += scoreFeel;
 		}
@@ -270,6 +277,7 @@ public class Environment extends EnvironmentInterface {
 					result.setHash("FFe");
 				}
 			}
+			setFeelCell(2);
 			result.setValence(scoreFeel);
 			score += scoreFeel;
 		}
@@ -353,5 +361,71 @@ public class Environment extends EnvironmentInterface {
 			neighbourStatus[2] = gridSeen[agentPosition[0]-1][agentPosition[1]];
 		}
 
+	}
+
+	public void setFeelCell(int direction ) {
+		feelCell = new Point();
+		if(agentPosition[2] == 0) {
+			if( direction == 0 ) {
+				feelCell.x = agentPosition[0]-1;
+				feelCell.y = agentPosition[1];
+			}
+			if( direction == 1 ) {
+				feelCell.x = agentPosition[0]+1;
+				feelCell.y = agentPosition[1];
+			}
+			if( direction == 2 ) {
+				feelCell.x = agentPosition[0];
+				feelCell.y = agentPosition[1]+1;
+			}
+		}
+
+		if(agentPosition[2] == 1) {
+			if( direction == 0 ) {
+				feelCell.x = agentPosition[0];
+				feelCell.y = agentPosition[1]+1;
+			}
+			if( direction == 1 ) {
+				feelCell.x = agentPosition[0];
+				feelCell.y = agentPosition[1]-1;
+			}
+			if( direction == 2 ) {
+				feelCell.x = agentPosition[0]+1;
+				feelCell.y = agentPosition[1];
+			}
+		}
+		if(agentPosition[2] == 2) {
+			if( direction == 0 ) {
+				feelCell.x = agentPosition[0]+1;
+				feelCell.y = agentPosition[1];
+			}
+			if( direction == 1 ) {
+				feelCell.x = agentPosition[0]-1;
+				feelCell.y = agentPosition[1];
+			}
+			if( direction == 2 ) {
+				feelCell.x = agentPosition[0];
+				feelCell.y = agentPosition[1]-1;
+			}
+		}
+		if(agentPosition[2] == 3) {
+			if( direction == 0 ) {
+				feelCell.x = agentPosition[0];
+				feelCell.y = agentPosition[1]-1;
+			}
+			if( direction == 1 ) {
+				feelCell.x = agentPosition[0];
+				feelCell.y = agentPosition[1]+1;
+			}
+			if( direction == 2 ) {
+				feelCell.x = agentPosition[0]-1;
+				feelCell.y = agentPosition[1];
+			}
+		}
+	}
+
+	
+	public Point getFeelCell() {
+		return feelCell;
 	}
 }

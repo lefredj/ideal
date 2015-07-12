@@ -95,7 +95,17 @@ public class CoreControl {
 				g.setColor(Color.GRAY);
 				g.fillRect(cellX, cellY, sizeOfCell, sizeOfCell);
 			}
-
+			fillCells2.clear();
+			
+			Point feelCell = environment.getFeelCell();
+			if(feelCell != null) {
+				int cellX = sizeOfCell + (feelCell.x * sizeOfCell);
+				int cellY = sizeOfCell + (feelCell.y * sizeOfCell);
+				g.setColor(Color.GREEN);
+				g.fillRect(cellX, cellY, sizeOfCell, sizeOfCell);
+			}
+			
+			
 			drawAgent(environment.agentPosition);
 
 			g.setColor(Color.GREEN);
