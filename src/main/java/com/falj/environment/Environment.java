@@ -65,12 +65,12 @@ public class Environment extends EnvironmentInterface {
 		seen = 0;
 
 		// simple loop environment
-//		setSimpleEnvironment();
+		setSimpleEnvironment();
 
 		//setAllSeen();
 
 		// random environment
-		setRandomEnvironment(10, 0.25);
+//		setRandomEnvironment(10, 0.25);
 		// empty environment
 		//setEmptyEnvironment();
 
@@ -121,8 +121,8 @@ public class Environment extends EnvironmentInterface {
 		// x,y,orientation
 		agentPosition = new Integer[3];
 
-		agentPosition[0] = 1;
-		agentPosition[1] = 4;
+		agentPosition[0] = 4;
+		agentPosition[1] = 2;
 		agentPosition[2] = 0;
 		gridSeen[agentPosition[0]][agentPosition[1]] = seen;
 	}
@@ -335,12 +335,7 @@ public class Environment extends EnvironmentInterface {
 				+ description);
 
 		guiGrid.repaint();
-		try {
-			Thread.sleep(10L);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		
 		return result;
 	}
 

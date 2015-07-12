@@ -92,6 +92,12 @@ public class Agent {
 			if( h.compareTo(result.getHash()) != 0 ) {
 				break;
 			}
+//			try {
+//				Thread.sleep(100L);
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 		}
 
 		return new Interaction(hash, valence);

@@ -40,10 +40,10 @@ class Neo4jMemory {
 	private static final String DB_PATH = "target/neo4j-";
 	
 	// parameters for the organization of the memory
-	private static final Long MIN_NTRIALS = 10L;
-	private static final double MIN_PROBA = 0.1;
+	private static final Long MIN_NTRIALS = 2L;
+	private static final double MIN_PROBABILITY_TO_KEEP = 0.2;
 	private static final double DEFAULT_PROBABILITY = 0.5;
-	private static final double MIN_PROBABILITY_TO_ENACT = 0.5;
+	private static final double MIN_PROBABILITY_TO_ENACT = 0.3;
 	private static final double MIN_PROBABILITY_FOR_LEARNING = 0.95;
 	private static final double MIN_TRIALS_PROBABILITY_TO_KEEP = 0.001;
 	private static final double MAX_PROCLIVITY_TOLERANCE = 0.1;
@@ -299,29 +299,27 @@ class Neo4jMemory {
 					Iterable<Relationship> relationships = node.getRelationships(Direction.OUTGOING);
 					for (Relationship relationship : relationships) {
 						double probability = (Double) relationship.getProperty("probability");
-						if( probability <= MIN_PROBA) {
+						if( probability <= MIN_PROBABILITY_TO_KEEP) {
 							relationship.delete();
 							numberOfRelationDeleted++;
 						} else {
 							if(((Long) relationship.getProperty("nTrials")  > 1 ) && 
 									((Long) relationship.getProperty("nTrials") < MIN_TRIALS_PROBABILITY_TO_KEEP * (age - (Long) node.getProperty("birth")))) {
 								relationship.delete();
-								System.out.println((Long) node.getProperty("birth"));
 								numberOfRelationDeleted++;
 							}
 						}
-
-						if( probability >= MIN_PROBABILITY_FOR_LEARNING) {
-							String newHash = node.getProperty("name") + "/" + relationship.getEndNode().getProperty("name");
-							Node newNode = graphDb.findNode(DynamicLabel.label("interaction"), "name", newHash);
-							if( newNode == null ) {
-								Interaction interaction = new Interaction(
-										newHash, 
-										(Double)node.getProperty("valence") + (Double)relationship.getEndNode().getProperty("valence") );
-								toAdd.add(interaction);
-							}
-						}					
 					}
+					if( probability >= MIN_PROBABILITY_FOR_LEARNING) {
+						String newHash = node.getProperty("name") + "/" + relationship.getEndNode().getProperty("name");
+						Node newNode = graphDb.findNode(DynamicLabel.label("interaction"), "name", newHash);
+						if( newNode == null ) {
+							Interaction interaction = new Interaction(
+									newHash, 
+									(Double)node.getProperty("valence") + (Double)relationship.getEndNode().getProperty("valence") );
+							toAdd.add(interaction);
+						}
+					}					
 				}
 			}
 			tx.success();
