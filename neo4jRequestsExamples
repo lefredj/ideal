@@ -1,0 +1,7 @@
+MATCH ()-[r:LEADS_TO]->()WHERE r.nTrials<>0 RETURN r LIMIT 100
+
+MATCH ()-[r:LEADS_TO]->(n:interaction{name:"FwdOk"}) WHERE r.nTrials<>0 RETURN r LIMIT 100
+
+MATCH (n:interaction) WHERE n.valence >= 10 RETURN n LIMIT 25
+
+MATCH (n:interaction) WHERE n.name="FFe" >= 10 RETURN n LIMIT 25
