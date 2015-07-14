@@ -121,9 +121,9 @@ public class Environment extends EnvironmentInterface {
 		// x,y,orientation
 		agentPosition = new Integer[3];
 
-		agentPosition[0] = 4;
-		agentPosition[1] = 2;
-		agentPosition[2] = 0;
+		agentPosition[0] = 1;//4;
+		agentPosition[1] = 4;//2;
+		agentPosition[2] = 1;
 		gridSeen[agentPosition[0]][agentPosition[1]] = seen;
 	}
 

@@ -14,10 +14,8 @@ package com.falj.agent;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,7 +28,6 @@ import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.schema.IndexCreator;
-import org.neo4j.graphdb.schema.IndexDefinition;
 import org.neo4j.graphdb.schema.Schema;
 import org.neo4j.helpers.collection.IteratorUtil;
 import org.neo4j.io.fs.FileUtils;
@@ -40,13 +37,14 @@ class Neo4jMemory {
 	private static final String DB_PATH = "target/neo4j-";
 
 	// parameters for the organization of the memory
-	private static final Long MIN_NTRIALS = 2L;
-	private static final double MIN_PROBABILITY_TO_KEEP = 0.2;
+	private static final Long MIN_NTRIALS = 10L;
+	private static final double MIN_PROBABILITY_TO_KEEP = 0.5;
 	private static final double DEFAULT_PROBABILITY = 0.5;
-	private static final double MIN_PROBABILITY_TO_ENACT = 0.3;
-	private static final double MIN_PROBABILITY_FOR_LEARNING = 0.95;
+	private static final double MIN_PROBABILITY_TO_ENACT = 0.5;
+	private static final double MIN_PROBABILITY_FOR_LEARNING = 0.99;
 	private static final double MIN_TRIALS_PROBABILITY_TO_KEEP = 0.001;
 	private static final double MAX_PROCLIVITY_TOLERANCE = 0.1;
+	private static final int MAX_LENGTH_OF_COMPOSED_INTERACTION = 3;
 
 	GraphDatabaseService graphDb;
 	Node nodeage;
@@ -103,13 +101,13 @@ class Neo4jMemory {
 			tx.success();
 		}
 		for (Interaction interaction : interactions) {
-			addNode(interaction.getHash(), interaction.getValence());
+			addNode(interaction.getHash(), interaction.getValence(), true);
 		}
 
 		defaultInteraction = interactions.iterator().next().getHash();
 	}
 
-	private boolean addNode(String hash, Double valence) {
+	private boolean addNode(String hash, Double valence, boolean primitive) {
 		boolean result = false;
 		try ( Transaction tx = graphDb.beginTx() )
 		{
@@ -128,13 +126,23 @@ class Neo4jMemory {
 					r0.setProperty("nTrials", 0L);
 					r0.setProperty("nSuccess", 0L);
 					r0.setProperty("probability", DEFAULT_PROBABILITY);
-					r0.setProperty("proclivity", DEFAULT_PROBABILITY * (Double) node2.getProperty("valence")); 
+
+					if( primitive ) {
+						r0.setProperty("proclivity", 0.0); 
+					} else {
+						r0.setProperty("proclivity", DEFAULT_PROBABILITY * (Double) node2.getProperty("valence")); 
+					}
+
 					if( !node.equals(node2) ) {
 						Relationship r1 = node2.createRelationshipTo(node, RelTypes.LEADS_TO);
 						r1.setProperty("nTrials", 0L);
 						r1.setProperty("nSuccess", 0L);
 						r1.setProperty("probability", DEFAULT_PROBABILITY);
-						r1.setProperty("proclivity", DEFAULT_PROBABILITY * (Double) node.getProperty("valence")); 
+						if( primitive ) {
+							r1.setProperty("proclivity", 0.0); 
+						} else {
+							r1.setProperty("proclivity", DEFAULT_PROBABILITY * (Double) node.getProperty("valence")); 
+						}
 					}
 				}
 			}
@@ -154,21 +162,14 @@ class Neo4jMemory {
 			previousNode  = graphDb.findNode(DynamicLabel.label("interaction"), "name", previousInteraction.getHash());
 			tx.success();
 		}
-		if( previousNode == null ) {
-			addNode(previousInteraction.getHash(), previousInteraction.getValence());
-			try ( Transaction tx = graphDb.beginTx() )
-			{
-				previousNode  = graphDb.findNode(DynamicLabel.label("interaction"), "name", previousInteraction.getHash());
-				tx.success();
-			}	
-		}
 
 		try ( Transaction tx = graphDb.beginTx() )
 		{
 			Iterable<Relationship> rel = previousNode.getRelationships(Direction.OUTGOING);
-			Map<String,Double> possibleResponses = new HashMap<>();
-			List<String> response = new ArrayList<String>();
+			Map<String,Double[]> possibleResponses = new HashMap<>();
+			Map<String,Double> response = new HashMap();
 			double proclivityMax = -Double.MAX_VALUE;
+
 			for (Relationship relationship : rel) {
 
 				double probability = (Double) relationship.getProperty("probability");
@@ -177,7 +178,9 @@ class Neo4jMemory {
 					if( proclivity > proclivityMax ) {
 						proclivityMax = proclivity;
 					}
-					possibleResponses.put((String) relationship.getEndNode().getProperty("name"), proclivity);
+					Double tried = (double) (Long) relationship.getProperty("nTrials");
+					possibleResponses.put((String) relationship.getEndNode().getProperty("name"), 
+							new Double[]{proclivity, tried});
 				}
 			}
 
@@ -185,12 +188,20 @@ class Neo4jMemory {
 
 			// find best
 			for (String key : possibleResponses.keySet()) {
-				if( proclivityMax <= possibleResponses.get(key)) {
-					response.add(key);
+				if( proclivityMax <= possibleResponses.get(key)[0]) {
+					response.put(key,possibleResponses.get(key)[1]);
 				}
 			}
+			
 			if(!response.isEmpty()) {
-				result = response.get((int) Math.floor(Math.random()*response.size()));
+				// find leastTried
+				double minTried = Double.MAX_VALUE;
+				for (String key : response.keySet()) {
+					if( minTried > response.get(key)) {
+						result = key;
+						minTried = response.get(key);
+					}
+				}
 			}
 			nodeage.setProperty("age",age);
 
@@ -214,7 +225,7 @@ class Neo4jMemory {
 		}
 		// check if result is known
 		if(resultNode == null) {
-			addNode(result.getHash(), result.getValence());
+			addNode(result.getHash(), result.getValence(), false);
 			try ( Transaction tx = graphDb.beginTx() )
 			{
 				resultNode = graphDb.findNode(DynamicLabel.label("interaction"), "name", result.getHash());
@@ -234,6 +245,7 @@ class Neo4jMemory {
 				Iterable<Relationship> rel = previousNode.getRelationships(Direction.OUTGOING);
 				for (Relationship relationship : rel) {
 					if( triedNode.equals(relationship.getEndNode())) {
+						triedNode.setProperty("tried", (Long)resultNode.getProperty("tried") + 1L );
 						relationship.setProperty("nTrials", (Long)relationship.getProperty("nTrials") + 1L);
 						updateRelationShip(relationship);
 					}
@@ -259,8 +271,10 @@ class Neo4jMemory {
 		probability = (double) (Long) relationship.getProperty("nSuccess") / (double) (Long) relationship.getProperty("nTrials");
 		if(  (Long) relationship.getProperty("nTrials") < MIN_NTRIALS ) {
 			probability = DEFAULT_PROBABILITY;
-		}
+			//					proclivity = DEFAULT_PROCLIVITY;
+		} 
 		proclivity = probability * (Double)relationship.getEndNode().getProperty("valence");
+
 
 		relationship.setProperty("probability", probability );
 		relationship.setProperty("proclivity", proclivity);
@@ -297,27 +311,29 @@ class Neo4jMemory {
 				Iterable<Relationship> relationships = node.getRelationships(Direction.OUTGOING);
 				for (Relationship relationship : relationships) {
 					double probability = (Double) relationship.getProperty("probability");
-					// refrain from altering primitive interactions
-					if( ((String)node.getProperty("name")).contains("/")) {
+					if((Long) relationship.getProperty("nTrials")  > MIN_NTRIALS ) { 
+						// refrain from altering primitive interactions
+						//					if( ((String)node.getProperty("name")).contains("/")) {
 						if( probability <= MIN_PROBABILITY_TO_KEEP) {
 							relationship.delete();
 							numberOfRelationDeleted++;
 						} else {
-							if(((Long) relationship.getProperty("nTrials")  > 1 ) && 
-									((Long) relationship.getProperty("nTrials") < MIN_TRIALS_PROBABILITY_TO_KEEP * (age - (Long) node.getProperty("birth")))) {
+							if(((Long) relationship.getProperty("nTrials") < MIN_TRIALS_PROBABILITY_TO_KEEP * (age - (Long) node.getProperty("birth")))) {
 								relationship.delete();
 								numberOfRelationDeleted++;
 							}
 						}
-					}
-					if( probability >= MIN_PROBABILITY_FOR_LEARNING) {
-						String newHash = node.getProperty("name") + "/" + relationship.getEndNode().getProperty("name");
-						Node newNode = graphDb.findNode(DynamicLabel.label("interaction"), "name", newHash);
-						if( newNode == null ) {
-							Interaction interaction = new Interaction(
-									newHash, 
-									(Double)node.getProperty("valence") + (Double)relationship.getEndNode().getProperty("valence") );
-							toAdd.add(interaction);
+						//					}
+						if( probability >= MIN_PROBABILITY_FOR_LEARNING) {
+							String newHash = node.getProperty("name") + "/" + relationship.getEndNode().getProperty("name");
+							Node newNode = graphDb.findNode(DynamicLabel.label("interaction"), "name", newHash);
+							if( newNode == null ) {
+								Interaction interaction = new Interaction(
+										newHash, 
+										(Double)node.getProperty("valence") + (Double)relationship.getEndNode().getProperty("valence") );
+								toAdd.add(interaction);
+							}
+//							relationship.delete();
 						}
 					}
 				}
@@ -332,6 +348,7 @@ class Neo4jMemory {
 				int incoming = node.getDegree(Direction.INCOMING);
 				int outgoing = node.getDegree(Direction.OUTGOING);
 				if((outgoing + incoming )== 0) {
+					System.out.println("delete " + (String)node.getProperty("name"));
 					node.delete();
 					numberOfNodeForgot++;
 				}
@@ -340,8 +357,12 @@ class Neo4jMemory {
 		}
 
 		for (Interaction interaction : toAdd) {
-			if( addNode(interaction.getHash(), interaction.getValence()) ) {
-				numberOfNodeLearned++;
+			int count = interaction.getHash().length() - interaction.getHash().replace("/", "").length();
+			if(count < MAX_LENGTH_OF_COMPOSED_INTERACTION) {
+				if( addNode(interaction.getHash(), interaction.getValence(), false) ) {
+					System.out.println("learn " + interaction.getHash());
+					numberOfNodeLearned++;
+				}
 			}
 		}
 		//		System.out.println("relationShip deleted : " + numberOfRelationDeleted + "\n" +
