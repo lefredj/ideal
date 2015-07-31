@@ -37,14 +37,16 @@ class Neo4jMemory {
 	private static final String DB_PATH = "target/neo4j-";
 
 	// parameters for the organization of the memory
-	private static final Long MIN_NTRIALS = 10L;
+	private static final Long MIN_NTRIALS_FOR_UPDATING = 5L;
 	private static final double MIN_PROBABILITY_TO_KEEP = 0.5;
 	private static final double DEFAULT_PROBABILITY = 0.5;
 	private static final double MIN_PROBABILITY_TO_ENACT = 0.5;
 	private static final double MIN_PROBABILITY_FOR_LEARNING = 0.99;
 	private static final double MIN_TRIALS_PROBABILITY_TO_KEEP = 0.001;
 	private static final double MAX_PROCLIVITY_TOLERANCE = 0.1;
-	private static final int MAX_LENGTH_OF_COMPOSED_INTERACTION = 3;
+	private static final int MAX_LENGTH_OF_COMPOSED_INTERACTION = 10;
+	private static final Double DEFAULT_PROCLIVITY = 0.0;
+	private static final Long MIN_NTRIALS_FOR_LEARNING = 10L;
 
 	GraphDatabaseService graphDb;
 	Node nodeage;
@@ -167,7 +169,7 @@ class Neo4jMemory {
 		{
 			Iterable<Relationship> rel = previousNode.getRelationships(Direction.OUTGOING);
 			Map<String,Double[]> possibleResponses = new HashMap<>();
-			Map<String,Double> response = new HashMap();
+			Map<String,Double> response = new HashMap<String, Double>();
 			double proclivityMax = -Double.MAX_VALUE;
 
 			for (Relationship relationship : rel) {
@@ -269,11 +271,12 @@ class Neo4jMemory {
 		Double probability;
 		Double proclivity;
 		probability = (double) (Long) relationship.getProperty("nSuccess") / (double) (Long) relationship.getProperty("nTrials");
-		if(  (Long) relationship.getProperty("nTrials") < MIN_NTRIALS ) {
-			probability = DEFAULT_PROBABILITY;
-			//					proclivity = DEFAULT_PROCLIVITY;
-		} 
 		proclivity = probability * (Double)relationship.getEndNode().getProperty("valence");
+
+		if(  (Long) relationship.getProperty("nTrials") < MIN_NTRIALS_FOR_UPDATING ) {
+			probability = DEFAULT_PROBABILITY;
+			proclivity = DEFAULT_PROCLIVITY;
+		}
 
 
 		relationship.setProperty("probability", probability );
@@ -311,7 +314,7 @@ class Neo4jMemory {
 				Iterable<Relationship> relationships = node.getRelationships(Direction.OUTGOING);
 				for (Relationship relationship : relationships) {
 					double probability = (Double) relationship.getProperty("probability");
-					if((Long) relationship.getProperty("nTrials")  > MIN_NTRIALS ) { 
+					if((Long) relationship.getProperty("nTrials")  > MIN_NTRIALS_FOR_LEARNING ) { 
 						// refrain from altering primitive interactions
 						//					if( ((String)node.getProperty("name")).contains("/")) {
 						if( probability <= MIN_PROBABILITY_TO_KEEP) {

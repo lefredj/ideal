@@ -16,8 +16,6 @@ package com.falj.agent;
 
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import com.falj.environment.Environment;
 import com.falj.environment.EnvironmentInterface;
@@ -92,12 +90,6 @@ public class Agent {
 			if( h.compareTo(result.getHash()) != 0 ) {
 				break;
 			}
-//			try {
-//				Thread.sleep(100L);
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
 		}
 
 		return new Interaction(hash, valence);

@@ -70,7 +70,7 @@ public class Environment extends EnvironmentInterface {
 		//setAllSeen();
 
 		// random environment
-//		setRandomEnvironment(10, 0.25);
+//		setRandomEnvironment(10, 0.33);
 		// empty environment
 		//setEmptyEnvironment();
 
@@ -78,7 +78,7 @@ public class Environment extends EnvironmentInterface {
 
 		neighbourStatus = new int[3];
 
-		agent = new Agent(this,"000");
+		agent = new Agent(this,"001");
 
 	}
 
